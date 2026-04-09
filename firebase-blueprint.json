@@ -1,0 +1,48 @@
+{
+  "entities": {
+    "users": {
+      "title": "User Profile",
+      "description": "Stores extended user profile information.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "name": { "type": "string", "description": "Full name" },
+        "email": { "type": "string", "description": "Email address" },
+        "state": { "type": "string", "description": "State of residence" },
+        "institution": { "type": "array", "items": { "type": "string" }, "description": "Institutions applying to" },
+        "school": { "type": "string", "description": "School of interest" },
+        "gender": { "type": "string", "enum": ["H", "M"], "description": "Gender" },
+        "isRegistered": { "type": "boolean", "description": "Whether the user has completed registration" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Account creation timestamp" }
+      },
+      "required": ["uid", "email", "name", "isRegistered"]
+    },
+    "history": {
+      "title": "Exam History",
+      "description": "Stores exam and physical test results.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Owner UID" },
+        "date": { "type": "string", "format": "date-time" },
+        "type": { "type": "string", "enum": ["EXAMEN", "FISICO"] },
+        "title": { "type": "string" },
+        "institution": { "type": "string" },
+        "score": { "type": "string" },
+        "numericScore": { "type": "number" },
+        "isPass": { "type": "boolean" },
+        "details": { "type": "string" }
+      },
+      "required": ["uid", "date", "type", "title"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "users",
+      "description": "User profile data"
+    },
+    "/history/{historyId}": {
+      "schema": "history",
+      "description": "Exam history entries"
+    }
+  }
+}
