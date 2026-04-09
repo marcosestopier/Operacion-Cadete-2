@@ -2532,7 +2532,12 @@ export default function App() {
         return;
       }
       console.error("Error signing in with Google:", error);
-      alert("Error al iniciar sesión con Google.");
+      
+      if (error.code === 'auth/unauthorized-domain') {
+        alert("Error: El dominio 'operacioncadete.vercel.app' no está autorizado en Firebase. Debes agregarlo en la consola de Firebase > Authentication > Settings > Authorized domains.");
+      } else {
+        alert(`Error al iniciar sesión: ${error.message}`);
+      }
     }
   };
 
