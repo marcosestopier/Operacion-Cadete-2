@@ -60,7 +60,8 @@ import {
   onSnapshot,
   serverTimestamp,
   getDocs,
-  increment
+  increment,
+  deleteDoc
 } from 'firebase/firestore';
 
 // --- Types ---
@@ -2309,111 +2310,157 @@ const ConvocatoriaView = ({ institution, setInstitution }: { institution: Instit
   );
 };
 
-const PerfilView = ({ theme, setTheme, userData, onLogout }: { theme: Theme, setTheme: (t: Theme) => void, userData: UserData | null, onLogout: () => void }) => (
-  <motion.div 
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    className="pt-14 sm:pt-24 pb-32 px-4 sm:px-6 max-w-2xl mx-auto"
-  >
-    {/* Header Section - More refined and minimalist */}
-    <section className="mb-8 sm:mb-10">
-      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 p-6 bg-surface-container-lowest border border-outline-variant/10 rounded-2xl shadow-sm text-center sm:text-left">
-        <div className="relative">
-          <div className="w-20 h-20 rounded-full bg-surface-container-highest overflow-hidden border-2 border-primary/10">
-            <img 
-              alt={userData?.name || 'Aspirante'} 
-              className="w-full h-full object-cover grayscale" 
-              src={`https://picsum.photos/seed/${userData?.email || 'military'}/200/200`}
-              referrerPolicy="no-referrer"
-            />
-          </div>
-          <div className="absolute bottom-1 right-1 bg-green-500 w-4 h-4 rounded-full border-2 border-white"></div>
-        </div>
-        <div className="flex-1">
-          <h2 className="text-xl font-black tracking-tight text-primary-ink uppercase leading-tight">{userData?.name || 'ASPIRANTE'}</h2>
-          <p className="text-[10px] sm:text-xs font-bold tracking-widest text-outline uppercase mt-0.5">{userData?.email || 'SIN REGISTRO'}</p>
-          <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 bg-primary/5 border border-primary/10 rounded-full">
-            <Icon name="verified" className="text-[10px] text-primary" />
-            <span className="text-[8px] font-black text-primary uppercase tracking-widest">Aspirante Activo</span>
-          </div>
-        </div>
-      </div>
-    </section>
+const PerfilView = ({ theme, setTheme, userData, onLogout, onDeleteAccount }: { theme: Theme, setTheme: (t: Theme) => void, userData: UserData | null, onLogout: () => void, onDeleteAccount: () => void }) => {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Data Section */}
-      {userData && (
-        <section className="space-y-4">
-          <h3 className="text-[9px] font-black tracking-[0.3em] text-outline uppercase px-1">Expediente</h3>
-          <div className="bg-surface-container-lowest border border-outline-variant/10 rounded-2xl overflow-hidden divide-y divide-outline-variant/5">
-            {[
-              { label: 'Institución', value: userData.institution.join(' & '), icon: 'account_balance' },
-              { label: 'Escuela', value: userData.school || 'NO ESPECIFICADA', icon: 'school' },
-              { label: 'Estado', value: userData.state, icon: 'map' },
-              { label: 'Género', value: userData.gender === 'H' ? 'HOMBRE' : 'MUJER', icon: 'person' }
-            ].map((item, idx) => (
-              <div key={idx} className="flex items-center gap-4 p-4 hover:bg-surface-container-low/30 transition-colors">
-                <div className="w-9 h-9 rounded-xl bg-surface-container-low flex items-center justify-center text-primary shrink-0">
-                  <Icon name={item.icon} className="!text-lg" />
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-[7px] font-black uppercase tracking-widest text-outline/60">{item.label}</span>
-                  <span className="text-[11px] font-bold text-primary-ink uppercase truncate">{item.value}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Theme & Actions Section */}
-      <div className="space-y-6">
-        <section className="space-y-4">
-          <h3 className="text-[9px] font-black tracking-[0.3em] text-outline uppercase px-1">Personalización</h3>
-          <div className="flex p-1.5 bg-surface-container-low rounded-2xl border border-outline-variant/10 gap-1">
-            {[
-              { id: 'light', icon: 'light_mode', label: 'Claro' },
-              { id: 'dark', icon: 'dark_mode', label: 'Oscuro' },
-              { id: 'system', icon: 'settings_brightness', label: 'Auto' }
-            ].map((t) => (
-              <button 
-                key={t.id}
-                onClick={() => setTheme(t.id as Theme)}
-                className={`flex-1 flex flex-col items-center justify-center py-3 rounded-xl transition-all ${theme === t.id ? 'bg-surface-container-lowest shadow-sm text-primary' : 'text-outline/60 hover:text-outline'}`}
-              >
-                <Icon name={t.icon} className="!text-lg mb-1" />
-                <span className="text-[7px] font-black uppercase tracking-widest">{t.label}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section className="space-y-4">
-          <h3 className="text-[9px] font-black tracking-[0.3em] text-red-600 uppercase px-1">Seguridad</h3>
-          <div className="space-y-2">
-            <button 
-              onClick={onLogout}
-              className="w-full flex items-center gap-4 p-4 bg-surface-container-lowest border border-outline-variant/10 rounded-2xl hover:bg-red-50/50 transition-all group"
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="pt-14 sm:pt-24 pb-32 px-4 sm:px-6 max-w-2xl mx-auto"
+    >
+      {/* Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-surface-container-lowest border border-outline-variant/20 p-8 rounded-3xl max-w-sm w-full shadow-2xl"
             >
-              <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center text-red-600 shrink-0">
-                <Icon name="logout" className="!text-lg" />
+              <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 mb-6">
+                <Icon name="warning" className="!text-3xl" />
               </div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-red-600 flex-1 text-left">Cerrar sesión</span>
-              <Icon name="chevron_right" className="text-red-300 group-hover:translate-x-1 transition-transform" />
-            </button>
-            <button className="w-full flex items-center gap-4 p-4 bg-surface-container-lowest border border-outline-variant/10 rounded-2xl hover:bg-red-50/50 transition-all group">
-              <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center text-red-600 shrink-0">
-                <Icon name="delete_forever" className="!text-lg" />
+              <h3 className="text-xl font-black text-primary-ink uppercase tracking-tight mb-2">¿Eliminar cuenta?</h3>
+              <p className="text-xs text-outline font-bold uppercase tracking-widest leading-relaxed mb-8">
+                Esta acción es irreversible. Se borrarán todos tus datos de progreso y registro de forma permanente de nuestra base de datos.
+              </p>
+              <div className="flex flex-col gap-3">
+                <button 
+                  onClick={() => {
+                    onDeleteAccount();
+                    setShowDeleteConfirm(false);
+                  }}
+                  className="w-full py-4 bg-red-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-red-700 transition-colors"
+                >
+                  Confirmar Eliminación
+                </button>
+                <button 
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="w-full py-4 bg-surface-container-low text-outline text-[10px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-surface-container-high transition-colors"
+                >
+                  Cancelar
+                </button>
               </div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-red-600 flex-1 text-left">Eliminar cuenta</span>
-              <Icon name="chevron_right" className="text-red-300 group-hover:translate-x-1 transition-transform" />
-            </button>
+            </motion.div>
           </div>
-        </section>
+        )}
+      </AnimatePresence>
+
+      {/* Header Section - More refined and minimalist */}
+      <section className="mb-8 sm:mb-10">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 p-6 bg-surface-container-lowest border border-outline-variant/10 rounded-2xl shadow-sm text-center sm:text-left">
+          <div className="relative">
+            <div className="w-20 h-20 rounded-full bg-surface-container-highest overflow-hidden border-2 border-primary/10">
+              <img 
+                alt={userData?.name || 'Aspirante'} 
+                className="w-full h-full object-cover grayscale" 
+                src={`https://picsum.photos/seed/${userData?.email || 'military'}/200/200`}
+                referrerPolicy="no-referrer"
+              />
+            </div>
+            <div className="absolute bottom-1 right-1 bg-green-500 w-4 h-4 rounded-full border-2 border-white"></div>
+          </div>
+          <div className="flex-1">
+            <h2 className="text-xl font-black tracking-tight text-primary-ink uppercase leading-tight">{userData?.name || 'ASPIRANTE'}</h2>
+            <p className="text-[10px] sm:text-xs font-bold tracking-widest text-outline uppercase mt-0.5">{userData?.email || 'SIN REGISTRO'}</p>
+            <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 bg-primary/5 border border-primary/10 rounded-full">
+              <Icon name="verified" className="text-[10px] text-primary" />
+              <span className="text-[8px] font-black text-primary uppercase tracking-widest">Aspirante Activo</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Data Section */}
+        {userData && (
+          <section className="space-y-4">
+            <h3 className="text-[9px] font-black tracking-[0.3em] text-outline uppercase px-1">Expediente</h3>
+            <div className="bg-surface-container-lowest border border-outline-variant/10 rounded-2xl overflow-hidden divide-y divide-outline-variant/5">
+              {[
+                { label: 'Institución', value: userData.institution.join(' & '), icon: 'account_balance' },
+                { label: 'Escuela', value: userData.school || 'NO ESPECIFICADA', icon: 'school' },
+                { label: 'Estado', value: userData.state, icon: 'map' },
+                { label: 'Género', value: userData.gender === 'H' ? 'HOMBRE' : 'MUJER', icon: 'person' }
+              ].map((item, idx) => (
+                <div key={idx} className="flex items-center gap-4 p-4 hover:bg-surface-container-low/30 transition-colors">
+                  <div className="w-9 h-9 rounded-xl bg-surface-container-low flex items-center justify-center text-primary shrink-0">
+                    <Icon name={item.icon} className="!text-lg" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[7px] font-black uppercase tracking-widest text-outline/60">{item.label}</span>
+                    <span className="text-[11px] font-bold text-primary-ink uppercase truncate">{item.value}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Theme & Actions Section */}
+        <div className="space-y-6">
+          <section className="space-y-4">
+            <h3 className="text-[9px] font-black tracking-[0.3em] text-outline uppercase px-1">Personalización</h3>
+            <div className="flex p-1.5 bg-surface-container-low rounded-2xl border border-outline-variant/10 gap-1">
+              {[
+                { id: 'light', icon: 'light_mode', label: 'Claro' },
+                { id: 'dark', icon: 'dark_mode', label: 'Oscuro' },
+                { id: 'system', icon: 'settings_brightness', label: 'Auto' }
+              ].map((t) => (
+                <button 
+                  key={t.id}
+                  onClick={() => setTheme(t.id as Theme)}
+                  className={`flex-1 flex flex-col items-center justify-center py-3 rounded-xl transition-all ${theme === t.id ? 'bg-surface-container-lowest shadow-sm text-primary' : 'text-outline/60 hover:text-outline'}`}
+                >
+                  <Icon name={t.icon} className="!text-lg mb-1" />
+                  <span className="text-[7px] font-black uppercase tracking-widest">{t.label}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="space-y-4">
+            <h3 className="text-[9px] font-black tracking-[0.3em] text-red-600 uppercase px-1">Seguridad</h3>
+            <div className="space-y-2">
+              <button 
+                onClick={onLogout}
+                className="w-full flex items-center gap-4 p-4 bg-surface-container-lowest border border-outline-variant/10 rounded-2xl hover:bg-red-50/50 transition-all group"
+              >
+                <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center text-red-600 shrink-0">
+                  <Icon name="logout" className="!text-lg" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-red-600 flex-1 text-left">Cerrar sesión</span>
+                <Icon name="chevron_right" className="text-red-300 group-hover:translate-x-1 transition-transform" />
+              </button>
+              <button 
+                onClick={() => setShowDeleteConfirm(true)}
+                className="w-full flex items-center gap-4 p-4 bg-surface-container-lowest border border-outline-variant/10 rounded-2xl hover:bg-red-50/50 transition-all group"
+              >
+                <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center text-red-600 shrink-0">
+                  <Icon name="delete_forever" className="!text-lg" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-red-600 flex-1 text-left">Eliminar cuenta</span>
+                <Icon name="chevron_right" className="text-red-300 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
+          </section>
+        </div>
       </div>
-    </div>
-  </motion.div>
-);
+    </motion.div>
+  );
+};
 
 // --- Main App ---
 
@@ -2480,7 +2527,10 @@ export default function App() {
   const handleGoogleLogin = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
-    } catch (error) {
+    } catch (error: any) {
+      if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user') {
+        return;
+      }
       console.error("Error signing in with Google:", error);
       alert("Error al iniciar sesión con Google.");
     }
@@ -2498,6 +2548,27 @@ export default function App() {
       setView('home');
     } catch (error) {
       console.error("Error signing out:", error);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    try {
+      // Delete from Firestore first
+      await deleteDoc(doc(db, 'users', user.uid));
+      // Then delete from Auth
+      await user.delete();
+      setUserData(null);
+      setUser(null);
+      setView('home');
+    } catch (error: any) {
+      console.error("Error deleting account:", error);
+      if (error.code === 'auth/requires-recent-login') {
+        alert("Esta operación es sensible y requiere un inicio de sesión reciente. Por favor, vuelve a iniciar sesión e intenta de nuevo.");
+        await signOut(auth);
+      } else {
+        alert("Error al eliminar la cuenta de la base de datos.");
+      }
     }
   };
 
@@ -2543,7 +2614,7 @@ export default function App() {
         {view === 'simulador' && <SimuladorView setView={setView} />}
         {view === 'perfil' && (
           user ? (
-            <PerfilView theme={theme} setTheme={setTheme} userData={userData} onLogout={handleLogout} />
+            <PerfilView theme={theme} setTheme={setTheme} userData={userData} onLogout={handleLogout} onDeleteAccount={handleDeleteAccount} />
           ) : (
             <div className="pt-32 px-6 text-center max-w-md mx-auto">
               <Icon name="account_circle" className="text-8xl text-outline-variant mb-6" />
