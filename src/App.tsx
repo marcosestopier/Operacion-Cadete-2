@@ -156,7 +156,7 @@ const FloatingNav = ({ currentView, setView, isRegistered }: { currentView: View
 // --- Views ---
 
 // --- Constants & Config ---
-const APK_DOWNLOAD_URL = "https://download937.mediafire.com/m0xtmninduognIovsuosOXZ6OoPlafFlbYX6sVJvnEOcXjqoyKjD93ml1DS0Mcv0tfDfGs72paHw7EkPF23tDyCCWnfPdw7HdCXieA1K3VRBD3yjxhTXvGbzHrnE3X1_zxtwykfo2MmjmMuxoGgm00QaS3ilVJl4AjkT8O0ObOILGw/0utvhswrx547rnh/operacion-cadete.apk"; // Reemplaza esto con tu enlace externo
+const APK_DOWNLOAD_URL = "https://download1072.mediafire.com/os5hy2p0s6hgXkoWnOH8OLReBTDsC6N50gxcrlFFBdtIdgkw5Fv6DFyYa0tkc_houOmNkQgsvUzmGjNgxuIzqjq9NmE7D9mDyKKNQZFCnrzcTsM4hjY4-WqtSSK6Jbeh3zBc1uf5w3jAwrpDkHUTJc0_GTi3C5GonzKMpYctPKtd/6eep1u1inf6yzdt/app-release.apk";
 
 const HomeView = ({ setView, setInstitution, user, userData }: { setView: (v: View) => void, setInstitution: (i: Institution) => void, user: FirebaseUser | null, userData: UserData | null }) => {
   const [stats, setStats] = useState<{ total: number, state: number, institution: number, gender: number, school: number } | null>(null);
