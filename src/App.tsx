@@ -155,6 +155,9 @@ const FloatingNav = ({ currentView, setView, isRegistered }: { currentView: View
 
 // --- Views ---
 
+// --- Constants & Config ---
+const APK_DOWNLOAD_URL = "https://drive.google.com/file/d/1LZwuaT2pr8mWa2R4SzWitdTBjv3xb6q4/view?usp=sharing"; // Reemplaza esto con tu enlace externo
+
 const HomeView = ({ setView, setInstitution, user, userData }: { setView: (v: View) => void, setInstitution: (i: Institution) => void, user: FirebaseUser | null, userData: UserData | null }) => {
   const [stats, setStats] = useState<{ total: number, state: number, institution: number, gender: number, school: number } | null>(null);
 
@@ -202,8 +205,9 @@ const HomeView = ({ setView, setInstitution, user, userData }: { setView: (v: Vi
       {/* Beta App Banner */}
       <section className="mb-12">
         <a 
-          href="/operacion-cadete.apk" 
-          download="operacion-cadete.apk"
+          href={APK_DOWNLOAD_URL} 
+          target="_blank"
+          rel="noopener noreferrer"
           className="relative overflow-hidden group flex items-center p-6 bg-gradient-to-br from-[#4285F4] to-[#34A853] rounded-3xl border border-white/10 shadow-lg hover:shadow-xl transition-all duration-500"
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:bg-white/20 transition-colors" />
