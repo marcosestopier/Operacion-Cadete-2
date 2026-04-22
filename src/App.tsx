@@ -199,6 +199,33 @@ const HomeView = ({ setView, setInstitution, user, userData }: { setView: (v: Vi
         <p className="text-white/60 dark:text-primary-ink/60 text-[10px] font-bold tracking-[0.2em] uppercase">Tu camino hacia el éxito comienza aquí.</p>
       </section>
 
+      {/* Beta App Banner */}
+      <section className="mb-12">
+        <a 
+          href="/operacion-cadete.apk" 
+          download="operacion-cadete.apk"
+          className="relative overflow-hidden group flex items-center p-6 bg-gradient-to-br from-[#4285F4] to-[#34A853] rounded-3xl border border-white/10 shadow-lg hover:shadow-xl transition-all duration-500"
+        >
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:bg-white/20 transition-colors" />
+          <div className="flex items-center gap-5 relative z-10 w-full">
+            <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-inner group-hover:scale-110 transition-transform duration-500">
+              <Icon name="shop" className="text-3xl text-white font-variation-fill" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="px-2 py-0.5 bg-yellow-400 text-[8px] font-black uppercase text-black rounded-full tracking-widest">BETA</span>
+                <span className="text-[10px] font-black text-white/80 uppercase tracking-widest">Próximamente en Play Store</span>
+              </div>
+              <h3 className="text-lg font-black text-white leading-tight uppercase tracking-tight">¡Prueba nuestra app en fase Beta!</h3>
+              <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest mt-1 group-hover:translate-x-1 transition-transform">Haz clic para descargar el APK</p>
+            </div>
+            <div className="hidden sm:flex w-10 h-10 bg-white/10 rounded-full items-center justify-center border border-white/20 group-hover:bg-white/20 transition-colors">
+              <Icon name="download" className="text-white text-xl" />
+            </div>
+          </div>
+        </a>
+      </section>
+
       <section className="mb-12">
         <h2 className="text-xs font-bold tracking-[0.2em] text-primary uppercase mb-6">Convocatorias</h2>
         <div className="grid grid-cols-2 gap-4">
