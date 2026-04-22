@@ -38,11 +38,12 @@ service cloud.firestore {
       allow read: if isOwner(userId);
       allow create: if isOwner(userId) && isValidUser(request.resource.data);
       allow update: if isOwner(userId) && isValidUser(request.resource.data);
+      allow delete: if isOwner(userId);
     }
 
     match /metadata/stats {
       allow read: if true; // Stats are public aggregate data
-      allow update: if isAuthenticated(); // Users can update stats on registration
+      allow create, update: if isAuthenticated(); // Users can update stats on registration
     }
 
     match /history/{historyId} {

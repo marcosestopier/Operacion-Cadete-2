@@ -65,7 +65,7 @@ import {
 } from 'firebase/firestore';
 
 // --- Types ---
-type View = 'home' | 'calendario' | 'herramientas' | 'simulador' | 'perfil' | 'libros' | 'imc' | 'pomodoro' | 'requisitos' | 'simulador-fisico' | 'historial' | 'checklist' | 'convocatoria' | 'simulador-demo' | 'registro' | 'motivos-exclusion';
+type View = 'home' | 'calendario' | 'herramientas' | 'simulador' | 'perfil' | 'libros' | 'imc' | 'pomodoro' | 'requisitos' | 'simulador-fisico' | 'historial' | 'checklist' | 'convocatoria' | 'simulador-demo' | 'registro' | 'motivos-exclusion' | 'compras';
 type Theme = 'light' | 'dark' | 'system';
 
 interface UserData {
@@ -155,9 +155,8 @@ const FloatingNav = ({ currentView, setView, isRegistered }: { currentView: View
 
 // --- Views ---
 
-const HomeView = ({ setView, setInstitution, user }: { setView: (v: View) => void, setInstitution: (i: Institution) => void, user: FirebaseUser | null }) => {
+const HomeView = ({ setView, setInstitution, user, userData }: { setView: (v: View) => void, setInstitution: (i: Institution) => void, user: FirebaseUser | null, userData: UserData | null }) => {
   const [stats, setStats] = useState<{ total: number, state: number, institution: number, gender: number, school: number } | null>(null);
-  const [userData, setUserData] = useState<UserData | null>(null);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -165,20 +164,13 @@ const HomeView = ({ setView, setInstitution, user }: { setView: (v: View) => voi
         const statsDoc = await getDoc(doc(db, 'metadata', 'stats'));
         const statsData = statsDoc.exists() ? statsDoc.data() : null;
         
-        let currentUData: UserData | null = null;
-        if (user) {
-          const uDoc = await getDoc(doc(db, 'users', user.uid));
-          if (uDoc.exists()) currentUData = uDoc.data() as UserData;
-        }
-        setUserData(currentUData);
-
         if (statsData) {
           setStats({
             total: statsData.total || 0,
-            state: currentUData ? (statsData.states?.[currentUData.state] || 0) : 0,
-            institution: currentUData ? Math.max(...currentUData.institution.map(i => statsData.institutions?.[i] || 0)) : 0,
-            gender: currentUData ? (statsData.genders?.[currentUData.gender] || 0) : 0,
-            school: currentUData ? (statsData.schools?.[currentUData.school] || 0) : 0
+            state: userData ? (statsData.states?.[userData.state] || 0) : 0,
+            institution: userData ? Math.max(...userData.institution.map(i => statsData.institutions?.[i] || 0)) : 0,
+            gender: userData ? (statsData.genders?.[userData.gender] || 0) : 0,
+            school: userData ? (statsData.schools?.[userData.school] || 0) : 0
           });
         } else {
           setStats({
@@ -194,7 +186,7 @@ const HomeView = ({ setView, setInstitution, user }: { setView: (v: View) => voi
       }
     };
     fetchStats();
-  }, [user]);
+  }, [user, userData]);
 
   return (
     <motion.div 
@@ -260,6 +252,13 @@ const HomeView = ({ setView, setInstitution, user }: { setView: (v: View) => voi
           >
             <Icon name="report_problem" className="text-red-600 mr-4" />
             <span className="text-sm font-medium tracking-tight text-on-surface group-hover:translate-x-1 transition-transform uppercase">Motivos para no entrar</span>
+          </button>
+          <button 
+            onClick={() => setView('compras')}
+            className="flex items-center py-6 border-b border-outline-variant/30 hover:bg-surface-container-low transition-colors px-2 group text-left w-full"
+          >
+            <Icon name="shopping_bag" className="text-primary mr-4" />
+            <span className="text-sm font-medium tracking-tight text-on-surface group-hover:translate-x-1 transition-transform uppercase">Compra tus artículos para el examen</span>
           </button>
         </div>
       </section>
@@ -628,9 +627,9 @@ const RegistroView = ({ user, onRegister }: { user: FirebaseUser, onRegister: (d
         await setDoc(statsRef, statsUpdate, { merge: true });
 
         onRegister(finalData);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error saving profile:", error);
-        alert("Error al guardar el perfil. Intenta de nuevo.");
+        alert(`Error al guardar el perfil: ${error.message || 'Intenta de nuevo'}`);
       } finally {
         setLoading(false);
       }
@@ -1981,6 +1980,79 @@ const MotivosExclusionView = ({ setView }: { setView: (v: View) => void }) => {
   );
 };
 
+const ComprasView = ({ setView }: { setView: (v: View) => void }) => {
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="pt-24 pb-32 px-6 max-w-2xl mx-auto"
+    >
+      <button 
+        onClick={() => setView('home')}
+        className="mb-8 flex items-center gap-2 text-[10px] font-black tracking-widest uppercase text-outline hover:text-primary transition-colors"
+      >
+        <Icon name="arrow_back" className="!text-lg" />
+        Volver al inicio
+      </button>
+
+      <section className="mb-10">
+        <h2 className="text-3xl font-black tracking-tighter text-primary-ink uppercase leading-none">Artículos para el examen</h2>
+        <p className="text-[10px] text-outline mt-3 font-bold uppercase tracking-widest leading-relaxed">
+          Compra a buen precio el material para el examen de natación, Googles, Gorros, Traje de baños.
+        </p>
+      </section>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <motion.div 
+          whileHover={{ y: -5 }}
+          className="bg-surface-container-lowest border border-outline-variant/20 rounded-3xl overflow-hidden shadow-sm flex flex-col"
+        >
+          <div className="h-40 bg-sedena/10 flex items-center justify-center">
+            <Icon name="account_balance" className="text-6xl text-sedena/40" />
+          </div>
+          <div className="p-6 flex-1 flex flex-col">
+            <h3 className="text-lg font-black text-primary-ink uppercase tracking-tight mb-2">Artículos SEDENA</h3>
+            <p className="text-[10px] text-outline font-bold uppercase tracking-widest mb-6 flex-1">
+              Material recomendado para el examen de ingreso a planteles militares de la SEDENA.
+            </p>
+            <a 
+              href="https://meli.la/1Tjmd3m" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="w-full py-4 bg-sedena text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl text-center hover:bg-sedena/90 transition-colors"
+            >
+              Ver en Mercado Libre
+            </a>
+          </div>
+        </motion.div>
+
+        <motion.div 
+          whileHover={{ y: -5 }}
+          className="bg-surface-container-lowest border border-outline-variant/20 rounded-3xl overflow-hidden shadow-sm flex flex-col"
+        >
+          <div className="h-40 bg-semar/10 flex items-center justify-center">
+            <Icon name="anchor" className="text-6xl text-semar/40" />
+          </div>
+          <div className="p-6 flex-1 flex flex-col">
+            <h3 className="text-lg font-black text-primary-ink uppercase tracking-tight mb-2">Artículos SEMAR</h3>
+            <p className="text-[10px] text-outline font-bold uppercase tracking-widest mb-6 flex-1">
+              Material recomendado para el examen de ingreso a la Heroica Escuela Naval Militar.
+            </p>
+            <a 
+              href="https://meli.la/2MbVyrD" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="w-full py-4 bg-semar text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl text-center hover:bg-semar/90 transition-colors"
+            >
+              Ver en Mercado Libre
+            </a>
+          </div>
+        </motion.div>
+      </div>
+    </motion.div>
+  );
+};
+
 const LibrosView = () => {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'ALL' | 'SEDENA' | 'SEMAR'>('ALL');
@@ -2559,7 +2631,26 @@ export default function App() {
   const handleDeleteAccount = async () => {
     if (!user) return;
     try {
-      // Delete from Firestore first
+      // Get user data before deleting to know what to decrement
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        const data = userDoc.data() as UserData;
+        const statsRef = doc(db, 'metadata', 'stats');
+        const statsUpdate: any = {
+          total: increment(-1),
+          [`states.${data.state}`]: increment(-1),
+          [`genders.${data.gender}`]: increment(-1)
+        };
+        data.institution.forEach(inst => {
+          statsUpdate[`institutions.${inst}`] = increment(-1);
+        });
+        if (data.school) {
+          statsUpdate[`schools.${data.school}`] = increment(-1);
+        }
+        await updateDoc(statsRef, statsUpdate);
+      }
+
+      // Delete from Firestore
       await deleteDoc(doc(db, 'users', user.uid));
       // Then delete from Auth
       await user.delete();
@@ -2595,6 +2686,7 @@ export default function App() {
       case 'simulador-demo': return 'Examen Demo';
       case 'registro': return 'Registro';
       case 'motivos-exclusion': return 'Motivos de Exclusión';
+      case 'compras': return 'Tienda de Artículos';
       default: return 'Operación Cadete';
     }
   };
@@ -2613,7 +2705,7 @@ export default function App() {
       {view === 'home' && <Header title={getTitle()} />}
       
       <main className="flex flex-col">
-        {view === 'home' && <HomeView setView={setView} setInstitution={setInstitution} user={user} />}
+        {view === 'home' && <HomeView setView={setView} setInstitution={setInstitution} user={user} userData={userData} />}
         {view === 'calendario' && <CalendarioView setView={setView} institution={institution} setInstitution={setInstitution} />}
         {view === 'herramientas' && <HerramientasView setView={setView} />}
         {view === 'simulador' && <SimuladorView setView={setView} />}
@@ -2645,6 +2737,7 @@ export default function App() {
         {view === 'historial' && <HistorialView user={user} />}
         {view === 'simulador-demo' && <SimuladorDemoView setView={setView} user={user} />}
         {view === 'motivos-exclusion' && <MotivosExclusionView setView={setView} />}
+        {view === 'compras' && <ComprasView setView={setView} />}
         {view === 'registro' && (
           user ? (
             <RegistroView user={user} onRegister={handleRegister} />
